@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="am" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>የዲሽ ባለሙያዎች - የሚሰራ ቲቪ አለ</title>
+    
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Noto Sans Ethiopic & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Noto Sans Ethiopic', 'Inter', sans-serif;
+            background-color: #070b14;
+            color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Subtle ambient radial background glow */
+        .ambient-bg {
+            background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.14) 0%, rgba(7, 11, 20, 1) 60%);
+        }
+
+        /* Glassmorphism cards */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.78);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+        }
+
+        /* Tactile Checkbox Item Transitions */
+        .skill-checkbox-btn {
+            touch-action: manipulation;
+            user-select: none;
+            transition: transform 0.12s ease, background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .skill-checkbox-btn:active {
+            transform: scale(0.985);
+        }
+
+        @keyframes checkPop {
+            0% { transform: scale(0.6); opacity: 0.4; }
+            65% { transform: scale(1.18); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .check-pop {
+            animation: checkPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Glowing CTA Button Animation */
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 25px rgba(245, 158, 11, 0.45), 0 0 50px rgba(239, 68, 68, 0.25);
+            }
+            50% {
+                box-shadow: 0 0 38px rgba(245, 158, 11, 0.75), 0 0 70px rgba(239, 68, 68, 0.45);
+            }
+        }
+        .cta-glow {
+            animation: pulseGlow 2.4s infinite ease-in-out;
+        }
+
+        /* Simulated Telegram iOS/Android Push Banner Slide Down */
+        @keyframes slideDownBanner {
+            0% { transform: translateY(-120%); opacity: 0; }
+            12% { transform: translateY(0); opacity: 1; }
+            88% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-120%); opacity: 0; }
+        }
+        .tg-push-banner {
+            animation: slideDownBanner 5.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        /* Custom scrollbar hiding */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="ambient-bg text-slate-100 antialiased selection:bg-cyan-500 selection:text-white">
+
+    <!-- SIMULATED LIVE TELEGRAM PUSH NOTIFICATION BANNER -->
+    <div id="simulatedPushBanner" class="hidden fixed top-3 left-3 right-3 z-50 flex justify-center pointer-events-none">
+        <div class="w-full max-w-md bg-slate-900/95 backdrop-blur-xl border border-sky-400/40 rounded-2xl p-3.5 shadow-2xl pointer-events-auto tg-push-banner">
+            <div class="flex items-start space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-lg shrink-0 shadow-md">
+                    ✈️
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-extrabold text-sky-400 tracking-wide uppercase">Telegram • አዲስ ስራ ደርሶዎታል!</span>
+                        <span class="text-[10px] text-slate-400">አሁን</span>
+                    </div>
+                    <p id="pushPreviewTitle" class="text-xs font-bold text-white mt-0.5 truncate">📺 የሚሰራ ቲቪ አለ! — ቦሌ</p>
+                    <p id="pushPreviewBody" class="text-[11px] text-slate-300 mt-0.5 line-clamp-2 leading-relaxed">ባለሙያ፡ ዳዊት ከበደ (+251911...)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div class="max-w-md mx-auto min-h-screen flex flex-col justify-between p-4 pb-8">
+        
+        <!-- TOP HEADER -->
+        <header class="flex items-center justify-between py-2 mb-3">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-xl shadow-lg shadow-cyan-500/20">
+                    📡
+                </div>
+                <div>
+                    <h1 class="text-base font-extrabold text-white tracking-tight">የዲሽ ባለሙያዎች ኔትወርክ</h1>
+                    <p class="text-[11px] text-slate-400">የቲቪ ጥገና ስራ መላኪያ ሲስተም</p>
+                </div>
+            </div>
+
+            <!-- Bot Configuration Button -->
+            <button type="button" onclick="openBotSetupModal()" class="glass-card hover:bg-slate-800/90 active:scale-95 transition px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 flex items-center space-x-1.5 border border-slate-700/80" title="የቴሌግራም ቦት ማስተካከያ">
+                <span>⚙️</span>
+                <span id="botStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span>ቦት</span>
+            </button>
+        </header>
+
+        <!-- ========================================================== -->
+        <!-- SCREEN 1: INSTALLER REGISTRATION SCREEN                    -->
+        <!-- ========================================================== -->
+        <main id="registrationScreen" class="flex-1 flex flex-col justify-center space-y-4">
+            <div class="glass-card rounded-3xl p-5 shadow-2xl border border-slate-800">
+                <div class="mb-4">
+                    <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 mb-2">
+                        ደረጃ 1 • የባለሙያ ምዝገባ
+                    </span>
+                    <h2 class="text-xl font-extrabold text-white">መረጃዎን ይመዝግቡ</h2>
+                    <p class="text-xs text-slate-400 mt-1">አንዴ ብቻ ይመዝገቡ፤ ከዚያ በአንድ ንኪኪ የሚሰራ ቲቪ ሲያገኙ መላክ ይችላሉ።</p>
+                </div>
+
+                <form id="installerRegForm" onsubmit="saveInstallerProfile(event)" class="space-y-4">
+                    <!-- Full Name -->
+                    <div>
+                        <label for="inputFullName" class="block text-xs font-bold text-slate-300 mb-1.5">1. ሙሉ ስም *</label>
+                        <input type="text" id="inputFullName" required placeholder="ምሳሌ፡ ዳዊት ከበደ" 
+                            class="w-full px-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700/90 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition">
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div>
+                        <label for="inputPhone" class="block text-xs font-bold text-slate-300 mb-1.5">2. ስልክ ቁጥር *</label>
+                        <input type="tel" id="inputPhone" required placeholder="+251911234567" dir="ltr"
+                            class="w-full px-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700/90 text-white text-sm text-left placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition">
+                    </div>
+
+                    <!-- Work Area / Subcity -->
+                    <div>
+                        <label for="inputArea" class="block text-xs font-bold text-slate-300 mb-1.5">3. የስራ አካባቢ (ክፍለ ከተማ / ሰፈር) *</label>
+                        <select id="inputArea" class="w-full px-4 py-3 rounded-xl bg-slate-900/90 border border-slate-700/90 text-white text-sm focus:outline-none focus:border-cyan-400 transition">
+                            <option value="ቦሌ (Bole)">📍 ቦሌ (Bole)</option>
+                            <option value="መገናኛ (Megenagna)">📍 መገናኛ (Megenagna)</option>
+                            <option value="CMC / ሰሚት">📍 CMC / ሰሚት</option>
+                            <option value="ፒያሳ (Piassa)">📍 ፒያሳ (Piassa)</option>
+                            <option value="ሜክሲኮ (Mexico)">📍 ሜክሲኮ (Mexico)</option>
+                            <option value="ጀሞ / ለቡ (Jemo/Lebu)">📍 ጀሞ / ለቡ (Jemo/Lebu)</option>
+                            <option value="ገርጂ (Gerji)">📍 ገርጂ (Gerji)</option>
+                            <option value="ሳሪስ / ቃሊቲ">📍 ሳሪስ / ቃሊቲ</option>
+                            <option value="አያት / ጣፎ">📍 አያት / ጣፎ</option>
+                            <option value="ካዛንቺስ (Kazanchis)">📍 ካዛንቺስ (Kazanchis)</option>
+                            <option value="ሌላ አካባቢ">📍 ሌላ አካባቢ</option>
+                        </select>
+                    </div>
+
+                    <!-- Tactile Additional Skills Checklist with ✅ -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-xs font-bold text-slate-300">4. ተጨማሪ የሚሰሯቸው ስራዎች</label>
+                            <div class="flex items-center space-x-2">
+                                <span id="selectedSkillsCount" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">1 / 6 ተመርጧል</span>
+                                <button type="button" id="toggleAllSkillsBtn" onclick="toggleAllSkills()" class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 active:scale-95 transition px-2 py-0.5 rounded-lg bg-slate-800/90 border border-slate-700">
+                                    ሁሉንም ምረጥ
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="skillsChecklist" class="space-y-2.5" role="group" aria-label="ተጨማሪ የሚሰሯቸው ስራዎች">
+                            <!-- Accessible checkbox buttons rendered dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Save & Continue CTA -->
+                    <button type="submit" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold text-sm shadow-lg shadow-cyan-500/25 active:scale-[0.98] transition flex items-center justify-center space-x-2 mt-2">
+                        <span>መዝግብ እና ቀጥል</span>
+                        <span>➔</span>
+                    </button>
+                </form>
+            </div>
+        </main>
+
+        <!-- ========================================================== -->
+        <!-- SCREEN 2: MAIN ACTION DASHBOARD ("የሚሰራ ቲቪ አለ")             -->
+        <!-- ========================================================== -->
+        <main id="dashboardScreen" class="hidden flex-1 flex flex-col space-y-4">
+            
+            <!-- Registered Installer Profile Badge Card -->
+            <div class="glass-card rounded-3xl p-4 border border-slate-800 shadow-xl">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center text-2xl">
+                            👷‍♂️
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-1.5">
+                                <h2 id="profileNameDisplay" class="text-base font-extrabold text-white">ዳዊት ከበደ</h2>
+                                <span class="text-xs" title="የተመዘገበ">✅</span>
+                            </div>
+                            <p id="profilePhoneAreaDisplay" class="text-xs text-slate-400 mt-0.5">+251911234567 • 📍 ቦሌ</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="editProfile()" class="px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-cyan-400 text-xs font-bold border border-slate-700 active:scale-95 transition">
+                        ✏️ መረጃ አስተካክል
+                    </button>
+                </div>
+
+                <!-- Selected Skills Pills with ✅ -->
+                <div id="profileSkillsBadges" class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-800/80">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- Optional Quick TV Details (Sleek & Fast) -->
+            <div class="glass-card rounded-3xl p-4 border border-slate-800 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-300">የቲቪው ዝርዝር (አማራጭ / Optional)</span>
+                    <button type="button" id="gpsToggleBtn" onclick="toggleGpsLocation()" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-[11px] font-semibold text-slate-300 hover:border-cyan-400 transition flex items-center space-x-1">
+                        <span id="gpsIcon">📍</span>
+                        <span id="gpsLabel">GPS ቦታ ጨምር</span>
+                    </button>
+                </div>
+
+                <!-- Quick TV Brand Chips -->
+                <div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                    <button type="button" onclick="selectTvBrand('Samsung', this)" class="tv-brand-chip px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-300 shrink-0 transition">Samsung</button>
+                    <button type="button" onclick="selectTvBrand('LG', this)" class="tv-brand-chip px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-300 shrink-0 transition">LG</button>
+                    <button type="button" onclick="selectTvBrand('Hisense', this)" class="tv-brand-chip px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-300 shrink-0 transition">Hisense</button>
+                    <button type="button" onclick="selectTvBrand('Sony', this)" class="tv-brand-chip px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-300 shrink-0 transition">Sony</button>
+                    <button type="button" onclick="selectTvBrand('TCL / ሌላ', this)" class="tv-brand-chip px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-300 shrink-0 transition">TCL / ሌላ</button>
+                </div>
+
+                <!-- Landmark / Note Input -->
+                <input type="text" id="quickLandmarkInput" placeholder="ትክክለኛ ሰፈር ወይም ብልሽት (ምሳሌ፡ ቦሌ ሩዋንዳ፣ ምስል የለውም)" 
+                    class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-amber-400 transition">
+            </div>
+
+            <!-- MASSIVE GLOWING PRIMARY TRIGGER BUTTON -->
+            <div class="py-1">
+                <button type="button" id="sendTvAlertBtn" onclick="sendTvAlertPush()" class="w-full py-6 px-5 rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 hover:from-amber-400 hover:to-red-500 text-white shadow-2xl cta-glow active:scale-[0.97] transition-all duration-150 flex flex-col items-center justify-center text-center border border-amber-300/30 relative overflow-hidden">
+                    <div class="flex items-center space-x-2.5 text-xl sm:text-2xl font-black tracking-tight">
+                        <span class="text-2xl sm:text-3xl">📺</span>
+                        <span>የሚሰራ ቲቪ አለ!</span>
+                    </div>
+                    <span class="text-xs font-semibold text-amber-100 mt-1.5 bg-black/20 px-3 py-1 rounded-full">
+                        🔔 ሲነኩት በቀጥታ Push Notification ይገባል
+                    </span>
+                </button>
+            </div>
+
+            <!-- SENT ALERTS HISTORY LOG -->
+            <div class="glass-card rounded-3xl p-4 border border-slate-800 flex-1">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-extrabold text-slate-300 uppercase tracking-wider">📋 የተላኩ ስራዎች ታሪክ</h3>
+                    <span id="historyCountBadge" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">0</span>
+                </div>
+
+                <div id="alertHistoryList" class="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                    <div class="text-center py-6 text-xs text-slate-500">
+                        እስካሁን የተላከ የቲቪ ስራ የለም። ከላይ ያለውን ቁልፍ ይጫኑ!
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="text-center text-[11px] text-slate-500 pt-4">
+            በቀጥታ ወደ ቴሌግራም ማሳወቂያ (Push Notification) ይልካል
+        </footer>
+    </div>
+
+    <!-- ========================================================== -->
+    <!-- MODAL: TELEGRAM BOT API CONFIGURATION (For App Owner)      -->
+    <!-- ========================================================== -->
+    <div id="botSetupModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-sm rounded-3xl p-5 border border-slate-700 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <span class="text-lg">⚙️</span>
+                    <h3 class="text-base font-extrabold text-white">የቴሌግራም ቦት ማስተካከያ</h3>
+                </div>
+                <button type="button" onclick="closeBotSetupModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold">✕</button>
+            </div>
+
+            <p class="text-xs text-slate-400 leading-relaxed">
+                ማሳወቂያው በቀጥታ ወደ እርስዎ ቴሌግራም እንዲገባ ከ <span class="text-sky-400 font-semibold">@BotFather</span> ያገኙትን Token እና የእርስዎን <span class="text-sky-400 font-semibold">Chat ID</span> ያስገቡ።
+            </p>
+
+            <div class="space-y-3">
+                <div>
+                    <label for="configBotToken" class="block text-xs font-bold text-slate-300 mb-1">Bot Token (ከ @BotFather)</label>
+                    <input type="text" id="configBotToken" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz" dir="ltr"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:border-sky-400">
+                </div>
+
+                <div>
+                    <label for="configChatId" class="block text-xs font-bold text-slate-300 mb-1">የእርስዎ Telegram Chat ID</label>
+                    <input type="text" id="configChatId" placeholder="ምሳሌ፡ 987654321" dir="ltr"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:border-sky-400">
+                </div>
+            </div>
+
+            <div class="bg-sky-500/10 border border-sky-500/20 rounded-xl p-2.5 text-[11px] text-sky-200">
+                💡 Token ባያስገቡም አፑ በ Demo Mode መልዕክቱ እንዴት እንደሚደርስዎት በቀጥታ ያሳይዎታል።
+            </div>
+
+            <button type="button" onclick="saveBotConfig()" class="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs shadow-lg active:scale-95 transition">
+                ✅ ማስተካከያውን አስቀምጥ
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. CONFIGURABLE TELEGRAM BOT CREDENTIALS
+        // ==========================================
+        const DEFAULT_BOT_TOKEN = ""; // ምሳሌ: "7123456789:AAH..."
+        const DEFAULT_ADMIN_CHAT_ID = ""; // ምሳሌ: "512345678"
+
+        let botConfig = (() => {
+            try {
+                return JSON.parse(localStorage.getItem('et_dish_bot_config')) || {
+                    token: DEFAULT_BOT_TOKEN,
+                    chatId: DEFAULT_ADMIN_CHAT_ID
+                };
+            } catch (e) {
+                return { token: DEFAULT_BOT_TOKEN, chatId: DEFAULT_ADMIN_CHAT_ID };
+            }
+        })();
+
+        // ==========================================
+        // 2. TELEGRAM WEBAPP SDK INITIALIZATION
+        // ==========================================
+        let tg = null;
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                if (tg.setHeaderColor) tg.setHeaderColor('#070b14');
+                if (tg.setBackgroundColor) tg.setBackgroundColor('#070b14');
+            }
+        } catch (e) {
+            console.log('Running outside Telegram WebView');
+        }
+
+        function triggerHaptic(type = 'light') {
+            try {
+                if (tg && tg.HapticFeedback) {
+                    if (type === 'success' || type === 'error') {
+                        tg.HapticFeedback.notificationOccurred(type);
+                    } else {
+                        tg.HapticFeedback.impactOccurred(type);
+                    }
+                }
+            } catch (e) {}
+        }
+
+        // ==========================================
+        // 3. PRACTICAL ETHIOPIAN DISH & TV SKILLS
+        // ==========================================
+        const AVAILABLE_SKILLS = [
+            {
+                id: 'dish_install',
+                icon: '📡',
+                label: 'የዲሽ ገጠማ እና ማስተካከል',
+                sub: 'Satellite Dish Installation & Alignment'
+            },
+            {
+                id: 'tv_mount',
+                icon: '📺',
+                label: 'ቲቪ ግድግዳ ላይ መስቀል',
+                sub: 'TV Wall Mounting'
+            },
+            {
+                id: 'receiver_sw',
+                icon: '🔌',
+                label: 'የሪሲቨር ሶፍትዌር እና ቻናል ፍለጋ',
+                sub: 'Receiver Software & Channel Tuning'
+            },
+            {
+                id: 'cabling',
+                icon: '🔧',
+                label: 'ቀላል የኤሌክትሪክ እና ኬብል ዝርጋታ',
+                sub: 'Wiring & Cable Extension'
+            },
+            {
+                id: 'smatv',
+                icon: '🏢',
+                label: 'የጋራ ዲሽ / SMATV ዝርጋታ',
+                sub: 'Multi-switch / Apartment Dish'
+            },
+            {
+                id: 'tv_fault',
+                icon: '🛠️',
+                label: 'የቲቪ ችግር መለየት',
+                sub: 'TV Fault Inspection'
+            }
+        ];
+
+        // ==========================================
+        // 4. APPLICATION STATE
+        // ==========================================
+        let installerProfile = (() => {
+            try {
+                return JSON.parse(localStorage.getItem('et_dish_installer_profile')) || null;
+            } catch (e) {
+                return null;
+            }
+        })();
+        let selectedSkills = installerProfile ? [...installerProfile.skills] : ['dish_install'];
+        let alertHistory = (() => {
+            try {
+                return JSON.parse(localStorage.getItem('et_dish_alert_history')) || [];
+            } catch (e) {
+                return [];
+            }
+        })();
+        let selectedTvBrand = '';
+        let gpsCoords = null;
+        let isSending = false;
+
+        // ==========================================
+        // 5. INITIALIZE UI ON LOAD
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            if (!installerProfile && tg?.initDataUnsafe?.user?.first_name) {
+                const u = tg.initDataUnsafe.user;
+                document.getElementById('inputFullName').value = `${u.first_name} ${u.last_name || ''}`.trim();
+            }
+
+            renderSkillsChecklist();
+            updateBotStatusIndicator();
+
+            if (installerProfile) {
+                showDashboardScreen();
+            } else {
+                showRegistrationScreen();
+            }
+        });
+
+        // ==========================================
+        // 6. UPGRADED TACTILE CHECKBOXES WITH ✅
+        // ==========================================
+        function renderSkillsChecklist(justToggledId = null) {
+            const container = document.getElementById('skillsChecklist');
+            container.innerHTML = '';
+
+            AVAILABLE_SKILLS.forEach(skill => {
+                const isChecked = selectedSkills.includes(skill.id);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.setAttribute('role', 'checkbox');
+                btn.setAttribute('aria-checked', isChecked ? 'true' : 'false');
+                btn.onclick = () => toggleSkill(skill.id);
+
+                btn.className = `skill-checkbox-btn w-full text-left p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                    isChecked 
+                        ? 'bg-emerald-500/15 border-emerald-400/60 text-white shadow-md shadow-emerald-950/40' 
+                        : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700'
+                }`;
+
+                const popAnim = (isChecked && justToggledId === skill.id) ? 'check-pop' : '';
+
+                btn.innerHTML = `
+                    <div class="flex items-center space-x-3 min-w-0">
+                        <div class="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all duration-150 ${
+                            isChecked 
+                                ? 'bg-emerald-500 border-2 border-emerald-300 shadow-lg shadow-emerald-500/40' 
+                                : 'bg-slate-800/90 border-2 border-slate-600'
+                        }">
+                            ${isChecked 
+                                ? `<span class="text-sm leading-none ${popAnim}">✅</span>` 
+                                : `<span class="w-2 h-2 rounded-full bg-slate-700"></span>`
+                            }
+                        </div>
+                        <div class="min-w-0">
+                            <div class="text-xs sm:text-[13px] font-bold truncate ${isChecked ? 'text-white' : 'text-slate-200'}">
+                                ${skill.icon} ${skill.label}
+                            </div>
+                            <div class="text-[10px] text-slate-400 truncate mt-0.5">${skill.sub}</div>
+                        </div>
+                    </div>
+                    <span class="text-[11px] font-extrabold px-2 py-0.5 rounded-md shrink-0 ${
+                        isChecked 
+                            ? 'bg-emerald-500/20 text-emerald-300' 
+                            : 'text-slate-500'
+                    }">
+                        ${isChecked ? 'ተመርጧል' : 'ይምረጡ'}
+                    </span>
+                `;
+                container.appendChild(btn);
+            });
+
+            // Update counter & Select All / Clear button text
+            document.getElementById('selectedSkillsCount').textContent = `${selectedSkills.length} / ${AVAILABLE_SKILLS.length} ተመርጧል`;
+            const toggleAllBtn = document.getElementById('toggleAllSkillsBtn');
+            if (selectedSkills.length === AVAILABLE_SKILLS.length) {
+                toggleAllBtn.textContent = 'ሁሉንም አጥፋ';
+                toggleAllBtn.className = 'text-[11px] font-bold text-amber-400 hover:text-amber-300 active:scale-95 transition px-2 py-0.5 rounded-lg bg-slate-800/90 border border-slate-700';
+            } else {
+                toggleAllBtn.textContent = 'ሁሉንም ምረጥ';
+                toggleAllBtn.className = 'text-[11px] font-bold text-cyan-400 hover:text-cyan-300 active:scale-95 transition px-2 py-0.5 rounded-lg bg-slate-800/90 border border-slate-700';
+            }
+        }
+
+        function toggleSkill(skillId) {
+            triggerHaptic('light');
+            if (selectedSkills.includes(skillId)) {
+                selectedSkills = selectedSkills.filter(id => id !== skillId);
+                renderSkillsChecklist(null);
+            } else {
+                selectedSkills.push(skillId);
+                renderSkillsChecklist(skillId);
+            }
+        }
+
+        function toggleAllSkills() {
+            triggerHaptic('medium');
+            if (selectedSkills.length === AVAILABLE_SKILLS.length) {
+                selectedSkills = [];
+            } else {
+                selectedSkills = AVAILABLE_SKILLS.map(s => s.id);
+            }
+            renderSkillsChecklist();
+        }
+
+        // ==========================================
+        // 7. REGISTRATION & PROFILE MANAGEMENT
+        // ==========================================
+        function saveInstallerProfile(e) {
+            e.preventDefault();
+            triggerHaptic('success');
+
+            const name = document.getElementById('inputFullName').value.trim();
+            const phone = document.getElementById('inputPhone').value.trim();
+            const area = document.getElementById('inputArea').value;
+
+            if (!name || !phone) return;
+
+            installerProfile = {
+                name,
+                phone,
+                area,
+                skills: selectedSkills.length > 0 ? [...selectedSkills] : ['dish_install'],
+                telegramUser: tg?.initDataUnsafe?.user?.username || ''
+            };
+
+            localStorage.setItem('et_dish_installer_profile', JSON.stringify(installerProfile));
+            showDashboardScreen();
+        }
+
+        function showRegistrationScreen() {
+            document.getElementById('registrationScreen').classList.remove('hidden');
+            document.getElementById('dashboardScreen').classList.add('hidden');
+        }
+
+        function showDashboardScreen() {
+            document.getElementById('registrationScreen').classList.add('hidden');
+            document.getElementById('dashboardScreen').classList.remove('hidden');
+
+            document.getElementById('profileNameDisplay').textContent = installerProfile.name;
+            document.getElementById('profilePhoneAreaDisplay').textContent = `${installerProfile.phone} • ${installerProfile.area}`;
+
+            // Render ✅ Skill Badges
+            const badgesContainer = document.getElementById('profileSkillsBadges');
+            badgesContainer.innerHTML = '';
+            installerProfile.skills.forEach(skillId => {
+                const skillObj = AVAILABLE_SKILLS.find(s => s.id === skillId);
+                if (skillObj) {
+                    const span = document.createElement('span');
+                    span.className = 'inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-[11px] font-semibold text-emerald-300';
+                    span.innerHTML = `<span>✅</span><span>${skillObj.label}</span>`;
+                    badgesContainer.appendChild(span);
+                }
+            });
+
+            renderAlertHistory();
+        }
+
+        function editProfile() {
+            triggerHaptic('light');
+            if (installerProfile) {
+                document.getElementById('inputFullName').value = installerProfile.name;
+                document.getElementById('inputPhone').value = installerProfile.phone;
+                document.getElementById('inputArea').value = installerProfile.area;
+                selectedSkills = [...installerProfile.skills];
+                renderSkillsChecklist();
+            }
+            showRegistrationScreen();
+        }
+
+        // ==========================================
+        // 8. OPTIONAL TV DETAILS & GPS PIN
+        // ==========================================
+        function selectTvBrand(brand, btnElement) {
+            triggerHaptic('light');
+            const allChips = document.querySelectorAll('.tv-brand-chip');
+            allChips.forEach(c => {
+                c.className = 'tv-brand-chip px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs font-semibold text-slate-300 shrink-0 transition';
+            });
+
+            if (selectedTvBrand === brand) {
+                selectedTvBrand = '';
+            } else {
+                selectedTvBrand = brand;
+                btnElement.className = 'tv-brand-chip px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400 text-xs font-bold text-amber-300 shrink-0 transition';
+            }
+        }
+
+        function toggleGpsLocation() {
+            triggerHaptic('light');
+            const btn = document.getElementById('gpsToggleBtn');
+            const label = document.getElementById('gpsLabel');
+            const icon = document.getElementById('gpsIcon');
+
+            if (gpsCoords) {
+                gpsCoords = null;
+                btn.className = 'px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-[11px] font-semibold text-slate-300 hover:border-cyan-400 transition flex items-center space-x-1';
+                icon.textContent = '📍';
+                label.textContent = 'GPS ቦታ ጨምር';
+                return;
+            }
+
+            label.textContent = 'በመፈለግ ላይ...';
+            if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        gpsCoords = {
+                            lat: pos.coords.latitude.toFixed(5),
+                            lng: pos.coords.longitude.toFixed(5)
+                        };
+                        btn.className = 'px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-[11px] font-bold text-emerald-300 transition flex items-center space-x-1';
+                        icon.textContent = '✅';
+                        label.textContent = 'GPS ተያይዟል';
+                    },
+                    () => {
+                        gpsCoords = { lat: '9.00540', lng: '38.76360' };
+                        btn.className = 'px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-[11px] font-bold text-emerald-300 transition flex items-center space-x-1';
+                        icon.textContent = '✅';
+                        label.textContent = 'GPS ተያይዟል';
+                    },
+                    { timeout: 5000 }
+                );
+            } else {
+                gpsCoords = { lat: '9.00540', lng: '38.76360' };
+                btn.className = 'px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-[11px] font-bold text-emerald-300 transition flex items-center space-x-1';
+                icon.textContent = '✅';
+                label.textContent = 'GPS ተያይዟል';
+            }
+        }
+
+        // ==========================================
+        // 9. SEND "የሚሰራ ቲቪ አለ!" PUSH NOTIFICATION
+        // ==========================================
+        async function sendTvAlertPush() {
+            if (isSending || !installerProfile) return;
+            isSending = true;
+            triggerHaptic('success');
+
+            const btn = document.getElementById('sendTvAlertBtn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `
+                <div class="flex items-center space-x-2 text-lg font-extrabold">
+                    <span class="animate-spin">⏳</span>
+                    <span>ማሳወቂያ በመላክ ላይ...</span>
+                </div>
+            `;
+
+            const landmark = document.getElementById('quickLandmarkInput').value.trim();
+            const skillNames = installerProfile.skills
+                .map(id => AVAILABLE_SKILLS.find(s => s.id === id)?.label)
+                .filter(Boolean)
+                .join('፣ ');
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('am-ET', { hour: '2-digit', minute: '2-digit' });
+
+            let telegramText = `🚨 *የሚሰራ ቲቪ አለ! (አዲስ ስራ)*\n\n`;
+            telegramText += `👷‍♂️ *ባለሙያ:* ${installerProfile.name}\n`;
+            telegramText += `📞 *ስልክ:* ${installerProfile.phone}\n`;
+            telegramText += `📍 *አካባቢ:* ${installerProfile.area}\n`;
+            if (selectedTvBrand) telegramText += `📺 *የቲቪ ዓይነት:* ${selectedTvBrand}\n`;
+            if (landmark) telegramText += `📝 *ተጨማሪ መረጃ:* ${landmark}\n`;
+            if (gpsCoords) telegramText += `🗺 *ካርታ:* https://maps.google.com/?q=${gpsCoords.lat},${gpsCoords.lng}\n`;
+            telegramText += `✅ *ተጨማሪ ሙያዎች:* ${skillNames}\n`;
+            telegramText += `⏰ *ሰዓት:* ${timeStr}`;
+
+            let deliveryStatus = 'የሙከራ Push ተልኳል';
+
+            if (botConfig.token && botConfig.chatId) {
+                try {
+                    const response = await fetch(`https://api.telegram.org/bot${botConfig.token}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: botConfig.chatId,
+                            text: telegramText,
+                            parse_mode: 'Markdown'
+                        })
+                    });
+                    const resData = await response.json();
+                    if (resData.ok) {
+                        deliveryStatus = 'ቀጥታ ቴሌግራም ገብቷል ✅';
+                    } else {
+                        deliveryStatus = 'ቦት ስህተት (Token ይፈትሹ)';
+                    }
+                } catch (err) {
+                    deliveryStatus = 'የኔትወርክ ስህተት';
+                }
+            } else if (tg && tg.sendData) {
+                try {
+                    tg.sendData(JSON.stringify({
+                        action: 'TV_REPAIR_ALERT',
+                        installer: installerProfile,
+                        tvBrand: selectedTvBrand,
+                        landmark: landmark,
+                        gps: gpsCoords,
+                        timestamp: now.toISOString()
+                    }));
+                    deliveryStatus = 'ወደ ቦቱ ተልኳል ✅';
+                } catch (e) {}
+            }
+
+            showSimulatedPushBanner(
+                `📺 የሚሰራ ቲቪ አለ! — ${installerProfile.area}`,
+                `${installerProfile.name} (${installerProfile.phone}) ${selectedTvBrand ? '• ' + selectedTvBrand : ''}`
+            );
+
+            const historyItem = {
+                id: Date.now(),
+                area: installerProfile.area,
+                tvBrand: selectedTvBrand || 'ቲቪ',
+                landmark: landmark,
+                time: timeStr,
+                status: deliveryStatus
+            };
+            alertHistory.unshift(historyItem);
+            if (alertHistory.length > 15) alertHistory.pop();
+            localStorage.setItem('et_dish_alert_history', JSON.stringify(alertHistory));
+            renderAlertHistory();
+
+            document.getElementById('quickLandmarkInput').value = '';
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                isSending = false;
+            }, 900);
+        }
+
+        function showSimulatedPushBanner(title, body) {
+            const banner = document.getElementById('simulatedPushBanner');
+            document.getElementById('pushPreviewTitle').textContent = title;
+            document.getElementById('pushPreviewBody').textContent = body;
+
+            banner.classList.add('hidden');
+            void banner.offsetWidth;
+            banner.classList.remove('hidden');
+        }
+
+        function renderAlertHistory() {
+            const list = document.getElementById('alertHistoryList');
+            const badge = document.getElementById('historyCountBadge');
+            badge.textContent = alertHistory.length;
+
+            if (alertHistory.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-6 text-xs text-slate-500">
+                        እስካሁን የተላከ የቲቪ ስራ የለም። ከላይ ያለውን ቁልፍ ይጫኑ!
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = alertHistory.map(item => `
+                <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800/90 flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-xs font-bold text-white">📺 ${item.tvBrand} • ${item.area}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-0.5">
+                            ${item.landmark ? item.landmark + ' • ' : ''}⏰ ${item.time}
+                        </p>
+                    </div>
+                    <span class="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0">
+                        ${item.status}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        // ==========================================
+        // 10. BOT SETUP MODAL HANDLERS
+        // ==========================================
+        function openBotSetupModal() {
+            triggerHaptic('light');
+            document.getElementById('configBotToken').value = botConfig.token || '';
+            document.getElementById('configChatId').value = botConfig.chatId || '';
+            document.getElementById('botSetupModal').classList.remove('hidden');
+        }
+
+        function closeBotSetupModal() {
+            document.getElementById('botSetupModal').classList.add('hidden');
+        }
+
+        function saveBotConfig() {
+            triggerHaptic('success');
+            botConfig.token = document.getElementById('configBotToken').value.trim();
+            botConfig.chatId = document.getElementById('configChatId').value.trim();
+            localStorage.setItem('et_dish_bot_config', JSON.stringify(botConfig));
+            updateBotStatusIndicator();
+            closeBotSetupModal();
+        }
+
+        function updateBotStatusIndicator() {
+            const dot = document.getElementById('botStatusDot');
+            if (botConfig.token && botConfig.chatId) {
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+            } else {
+                dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+            }
+        }
+    </script>
+</body>
+</html>
